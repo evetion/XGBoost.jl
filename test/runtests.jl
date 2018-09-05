@@ -1,77 +1,102 @@
 using XGBoost
-using FactCheck
+using Base.Test
 
-include("utils.jl")
+include(Pkg.dir("XGBoost") * "/test/utils.jl")
 
+@testset "XGBoost.jl" begin
+    @testset "C_API wrapper" begin
+        bst = Booster()
+        set_attr(bst, test = 1)
+        @test attr(bst, "test") == "1"
+        set_attr(bst, test = 2)
+        @test attributes(bst)["test"] == "2"
+        set_attr(bst, test = nothing)
+        @test attr(bst, "test") == ""
+    end
 
-facts("Sparse matrices") do
-    X = sparse(randn(100,10) .* bitrand(100,10))
-    y = randn(100)
-    DMatrix(X, label = y)
+    @testset "Training interface" begin
+        dtrain = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.train")
+        dtest = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.test")
 
-    X = sparse(convert(Matrix{Float32}, randn(10,100) .* bitrand(10,100)))
-    y = randn(100)
-    DMatrix(X, true)
+        params = Dict("objective" => "binary:logistic",
+                      "eta" => 1,
+                      "max_depth" => 2,
+                      "silent" => 1,
+                      "eval_metric" => ["error", "auc"])
 
-    X = sparse(randn(100,10) .* bitrand(100,10))
-    y = randn(100)
-    DMatrix(X)
-end
+        evals = [(dtrain, "train"), (dtest, "test")]
+        train(params, dtrain; num_boost_round = 100, evals = evals, verbose_eval = true,
+              early_stopping_rounds = 2)
+    end
 
-facts("DMatrix loading") do
-    dtrain = DMatrix("../data/agaricus.txt.train")
-    train_X, train_Y = readlibsvm("../data/agaricus.txt.train", (6513, 126))
-    @fact dtrain --> not(nothing)
+    @testset "Sparse matrices" begin
+        X = sparse(randn(100, 10) .* bitrand(100, 10))
+        y = randn(100)
+        DMatrix(X, label = y)
 
-    labels = get_info(dtrain, "label")
+        X = sparse(convert(Matrix{Float32}, randn(10, 100) .* bitrand(10, 100)))
+        y = randn(100)
+        DMatrix(X, transposed = true)
 
-    @fact train_Y --> labels
-end
+        X = sparse(randn(100, 10) .* bitrand(100, 10))
+        y = randn(100)
+        DMatrix(X)
+    end
 
-facts("Agaricus training") do
-    dtrain = DMatrix("../data/agaricus.txt.train")
-    dtest = DMatrix("../data/agaricus.txt.test")
-    watchlist = [(dtest, "eval"), (dtrain, "train")]
+    @testset "DMatrix loading" begin
+        dtrain = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.train")
+        train_X, train_Y = readlibsvm(Pkg.dir("XGBoost") * "/data/agaricus.txt.train", (6513, 126))
+        @test dtrain != nothing
 
-    bst = xgboost(dtrain, 2, watchlist=watchlist, eta = 1, max_depth = 2,
-                  objective = "binary:logistic", silent = 1)
-    @fact bst --> not(nothing)
+        labels = get_label(dtrain)
 
-    preds = XGBoost.predict(bst, dtest)
+        @test train_Y == labels
+    end
 
-    labels = get_info(dtest, "label")
-    @fact size(preds) --> size(labels)
+    @testset "Agaricus training" begin
+        dtrain = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.train")
+        dtest = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.test")
+        watchlist = [(dtest, "eval"), (dtrain, "train")]
 
-    err = countnz((preds .> 0.5) .!= labels) / length(preds)
-    @fact err --> less_than(0.1)
-end
+        bst = xgboost(dtrain, 2, watchlist=watchlist, eta = 1, max_depth = 2,
+                      objective = "binary:logistic", silent = 1)
+        @test bst != nothing
 
-facts("Cross validation") do
-    dtrain = DMatrix("../data/agaricus.txt.train")
-    dtest = DMatrix("../data/agaricus.txt.test")
-    watchlist = [(dtest, "eval"), (dtrain, "train")]
+        preds = XGBoost.predict(bst, dtest)
 
-    bst = nfold_cv(dtrain, 5, 3, eta = 1, max_depth = 2, objective = "binary:logistic", silent = 1,
-                   seed = 12345)
-    # important_features = importance(bst)
-    #
-    # @fact startswith(important_features[1].fname, "f28") --> true
-    # @pending important_features[1].fname --> "f28"
-end
+        labels = get_label(dtest)
+        @test size(preds) == size(labels)
 
-facts("Feature importance") do
-    dtrain = DMatrix("../data/agaricus.txt.train")
-    dtest = DMatrix("../data/agaricus.txt.test")
-    watchlist = [(dtest, "eval"), (dtrain, "train")]
+        err = countnz((preds .> .5) .!= labels) / length(preds)
+        @test err < .1
+    end
 
-    bst = xgboost(dtrain, 5, watchlist = watchlist, eta = 1, max_depth = 2,
-                  objective = "binary:logistic", silent = 1, seed = 12345)
-    important_features = importance(bst)
+    @testset "Cross validation" begin
+        dtrain = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.train")
+        dtest = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.test")
+        watchlist = [(dtest, "eval"), (dtrain, "train")]
 
-    @fact startswith(important_features[1].fname, "f28") --> true
-    @pending important_features[1].fname --> "f28"
-end
+        bst = nfold_cv(dtrain, 5, 3, eta = 1, max_depth = 2, objective = "binary:logistic",
+                       silent = 1, seed = 12345)
+        # important_features = importance(bst)
+        #
+        # @fact startswith(important_features[1].fname, "f28") --> true
+        # @pending important_features[1].fname --> "f28"
+    end
 
-facts("Example is running") do
-    include("example.jl")
+    @testset "Feature importance" begin
+        dtrain = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.train")
+        dtest = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.test")
+        watchlist = [(dtest, "eval"), (dtrain, "train")]
+
+        bst = xgboost(dtrain, 5, watchlist = watchlist, eta = 1, max_depth = 2,
+                      objective = "binary:logistic", silent = 1, seed = 12345)
+        important_features = importance(bst)
+
+        @test startswith(important_features[1].fname, "f28") == true
+    end
+
+    @testset "Example is running" begin
+        include("example.jl")
+    end
 end
