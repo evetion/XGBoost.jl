@@ -1,7 +1,5 @@
 module XGBoost
 
-using Compat
-
 include("libxgboost.jl")
 include("core.jl")
 include("training.jl")
