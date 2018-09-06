@@ -1,7 +1,7 @@
 using XGBoost
 using Test
 
-include(Pkg.dir("XGBoost") * "/test/utils.jl")
+include(joinpath(@__DIR__, "utils.jl"))
 
 @testset "XGBoost.jl" begin
     @testset "C_API wrapper" begin
@@ -15,8 +15,8 @@ include(Pkg.dir("XGBoost") * "/test/utils.jl")
     end
 
     @testset "Training interface" begin
-        dtrain = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.train")
-        dtest = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.test")
+        dtrain = DMatrix(joinpath(@__DIR__, "../data/agaricus.txt.train"))
+        dtest = DMatrix(joinpath(@__DIR__, "../data/agaricus.txt.test"))
 
         params = Dict("objective" => "binary:logistic",
                       "eta" => 1,
@@ -44,8 +44,8 @@ include(Pkg.dir("XGBoost") * "/test/utils.jl")
     end
 
     @testset "DMatrix loading" begin
-        dtrain = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.train")
-        train_X, train_Y = readlibsvm(Pkg.dir("XGBoost") * "/data/agaricus.txt.train", (6513, 126))
+        dtrain = DMatrix(joinpath(@__DIR__, "../data/agaricus.txt.train"))
+        train_X, train_Y = readlibsvm(joinpath(@__DIR__, "../data/agaricus.txt.train"), (6513, 126))
         @test dtrain != nothing
 
         labels = get_label(dtrain)
@@ -54,8 +54,8 @@ include(Pkg.dir("XGBoost") * "/test/utils.jl")
     end
 
     @testset "Agaricus training" begin
-        dtrain = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.train")
-        dtest = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.test")
+        dtrain = DMatrix(joinpath(@__DIR__, "../data/agaricus.txt.train"))
+        dtest = DMatrix(joinpath(@__DIR__, "../data/agaricus.txt.test"))
         watchlist = [(dtest, "eval"), (dtrain, "train")]
 
         bst = xgboost(dtrain, 2, watchlist=watchlist, eta = 1, max_depth = 2,
@@ -72,8 +72,8 @@ include(Pkg.dir("XGBoost") * "/test/utils.jl")
     end
 
     @testset "Cross validation" begin
-        dtrain = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.train")
-        dtest = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.test")
+        dtrain = DMatrix(joinpath(@__DIR__, "../data/agaricus.txt.train"))
+        dtest = DMatrix(joinpath(@__DIR__, "../data/agaricus.txt.test"))
         watchlist = [(dtest, "eval"), (dtrain, "train")]
 
         bst = nfold_cv(dtrain, 5, 3, eta = 1, max_depth = 2, objective = "binary:logistic",
@@ -85,8 +85,8 @@ include(Pkg.dir("XGBoost") * "/test/utils.jl")
     end
 
     @testset "Feature importance" begin
-        dtrain = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.train")
-        dtest = DMatrix(Pkg.dir("XGBoost") * "/data/agaricus.txt.test")
+        dtrain = DMatrix(joinpath(@__DIR__, "../data/agaricus.txt.train"))
+        dtest = DMatrix(joinpath(@__DIR__, "../data/agaricus.txt.test"))
         watchlist = [(dtest, "eval"), (dtrain, "train")]
 
         bst = xgboost(dtrain, 5, watchlist = watchlist, eta = 1, max_depth = 2,
