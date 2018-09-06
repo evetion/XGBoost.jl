@@ -20,7 +20,7 @@ macro xgboost(f, params...)
 end
 
 function XGDMatrixCreateFromFile(fname::String, silent::Int32)
-    out = Ref{Ptr{Void}}()
+    out = Ref{Ptr{Cvoid}}()
     @xgboost(:XGDMatrixCreateFromFile,
              fname => Cstring,
              silent => Cint,
@@ -29,7 +29,7 @@ function XGDMatrixCreateFromFile(fname::String, silent::Int32)
 end
 
 function XGDMatrixCreateFromCSC(data::SparseMatrixCSC)
-    out = Ref{Ptr{Void}}()
+    out = Ref{Ptr{Cvoid}}()
     @xgboost(:XGDMatrixCreateFromCSC,
              convert(Vector{UInt64}, data.colptr - 1) => Ptr{Bst_ulong},
              convert(Vector{UInt32}, data.rowval - 1) => Ptr{Cuint},
@@ -41,7 +41,7 @@ function XGDMatrixCreateFromCSC(data::SparseMatrixCSC)
 end
 
 function XGDMatrixCreateFromCSCT(data::SparseMatrixCSC)
-    handle = Ref{Ptr{Void}}()
+    handle = Ref{Ptr{Cvoid}}()
     @xgboost(:XGDMatrixCreateFromCSR,
              convert(Vector{UInt64}, data.colptr - 1) => Ptr{Bst_ulong},
              convert(Vector{UInt32}, data.rowval - 1) => Ptr{Cuint},
@@ -58,7 +58,7 @@ end
 
 function XGDMatrixCreateFromMatT(data::Matrix{Float32}, missing::Float32)
     ncol, nrow = size(data)
-    handle = Ref{Ptr{Void}}()
+    handle = Ref{Ptr{Cvoid}}()
     @xgboost(:XGDMatrixCreateFromMat,
              data => Ptr{Cfloat},
              nrow => Bst_ulong,
@@ -68,8 +68,8 @@ function XGDMatrixCreateFromMatT(data::Matrix{Float32}, missing::Float32)
     return handle[]
 end
 
-function XGDMatrixSliceDMatrix(handle::Ptr{Void}, idxset::Vector{Int32}, len::UInt64)
-    ret = Ref{Ptr{Void}}()
+function XGDMatrixSliceDMatrix(handle::Ptr{Cvoid}, idxset::Vector{Int32}, len::UInt64)
+    ret = Ref{Ptr{Cvoid}}()
     @xgboost(:XGDMatrixSliceDMatrix,
              handle => Ptr{Void},
              idxset => Ptr{Cint},
@@ -78,19 +78,19 @@ function XGDMatrixSliceDMatrix(handle::Ptr{Void}, idxset::Vector{Int32}, len::UI
     return ret[]
 end
 
-function XGDMatrixFree(handle::Ptr{Void})
+function XGDMatrixFree(handle::Ptr{Cvoid})
     @xgboost(:XGDMatrixFree,
              handle => Ptr{Void})
 end
 
-function XGDMatrixSaveBinary(handle::Ptr{Void}, fname::String, silent::Int32)
+function XGDMatrixSaveBinary(handle::Ptr{Cvoid}, fname::String, silent::Int32)
     @xgboost(:XGDMatrixSaveBinary,
              handle => Ptr{Void},
              fname => Cstring,
              silent => Cint)
 end
 
-function XGDMatrixSetFloatInfo(handle::Ptr{Void}, field::String, array::Vector{Float32},
+function XGDMatrixSetFloatInfo(handle::Ptr{Cvoid}, field::String, array::Vector{Float32},
                                len::UInt64)
     @xgboost(:XGDMatrixSetFloatInfo,
              handle => Ptr{Void},
@@ -99,7 +99,7 @@ function XGDMatrixSetFloatInfo(handle::Ptr{Void}, field::String, array::Vector{F
              len => Bst_ulong)
 end
 
-function XGDMatrixSetUIntInfo(handle::Ptr{Void}, field::String, array::Vector{UInt32},
+function XGDMatrixSetUIntInfo(handle::Ptr{Cvoid}, field::String, array::Vector{UInt32},
                               len::UInt64)
     @xgboost(:XGDMatrixSetUIntInfo,
              handle => Ptr{Void},
@@ -108,14 +108,14 @@ function XGDMatrixSetUIntInfo(handle::Ptr{Void}, field::String, array::Vector{UI
              len => Bst_ulong)
 end
 
-function XGDMatrixSetGroup(handle::Ptr{Void}, array::Vector{UInt32}, len::UInt64)
+function XGDMatrixSetGroup(handle::Ptr{Cvoid}, array::Vector{UInt32}, len::UInt64)
     @xgboost(:XGDMatrixSetGroup,
              handle => Ptr{Void},
              array => Ptr{Cuint},
              len => Bst_ulong)
 end
 
-function XGDMatrixGetFloatInfo(handle::Ptr{Void}, field::String, out_len::Vector{Bst_ulong})
+function XGDMatrixGetFloatInfo(handle::Ptr{Cvoid}, field::String, out_len::Vector{Bst_ulong})
     out_dptr = Ref{Ptr{Cfloat}}()
     @xgboost(:XGDMatrixGetFloatInfo,
              handle => Ptr{Void},
@@ -125,19 +125,19 @@ function XGDMatrixGetFloatInfo(handle::Ptr{Void}, field::String, out_len::Vector
     return out_dptr[]
 end
 
-function JLGetFloatInfo(handle::Ptr{Void}, field::String)
+function JLGetFloatInfo(handle::Ptr{Cvoid}, field::String)
     len = Bst_ulong[1]
     ptr = XGDMatrixGetFloatInfo(handle, field, len)
     return unsafe_wrap(Array, ptr, len[1])
 end
 
-function JLGetUintInfo(handle::Ptr{Void}, field::String)
+function JLGetUintInfo(handle::Ptr{Cvoid}, field::String)
     len = Bst_ulong[1]
     ptr = XGDMatrixGetUIntInfo(handle, field, len)
     return unsafe_wrap(Array, ptr, len[1])
 end
 
-function XGDMatrixGetUIntInfo(handle::Ptr{Void}, field::String, out_len::Vector{Bst_ulong})
+function XGDMatrixGetUIntInfo(handle::Ptr{Cvoid}, field::String, out_len::Vector{Bst_ulong})
     out_dptr = Ref{Ptr{Cuint}}()
     @xgboost(:XGDMatrixGetUIntInfo,
              handle => Ptr{Void},
@@ -147,7 +147,7 @@ function XGDMatrixGetUIntInfo(handle::Ptr{Void}, field::String, out_len::Vector{
     return out_dptr[]
 end
 
-function XGDMatrixNumRow(handle::Ptr{Void})
+function XGDMatrixNumRow(handle::Ptr{Cvoid})
     out = Ref{Bst_ulong}()
     @xgboost(:XGDMatrixNumRow,
              handle => Ptr{Void},
@@ -155,8 +155,8 @@ function XGDMatrixNumRow(handle::Ptr{Void})
     return out[]
 end
 
-function XGBoosterCreate(cachelist::Vector{Ptr{Void}}, len::Int64)
-    out = Ref{Ptr{Void}}()
+function XGBoosterCreate(cachelist::Vector{Ptr{Cvoid}}, len::Int64)
+    out = Ref{Ptr{Cvoid}}()
     @xgboost(:XGBoosterCreate,
              cachelist => Ptr{Ptr{Void}},
              len => Bst_ulong,
@@ -164,26 +164,26 @@ function XGBoosterCreate(cachelist::Vector{Ptr{Void}}, len::Int64)
     return out[]
 end
 
-function XGBoosterFree(handle::Ptr{Void})
+function XGBoosterFree(handle::Ptr{Cvoid})
     @xgboost(:XGBoosterFree,
              handle => Ptr{Void})
 end
 
-function XGBoosterSetParam(handle::Ptr{Void}, name::String, value::String)
+function XGBoosterSetParam(handle::Ptr{Cvoid}, name::String, value::String)
     @xgboost(:XGBoosterSetParam,
              handle => Ptr{Void},
              name => Cstring,
              value => Cstring)
 end
 
-function XGBoosterUpdateOneIter(handle::Ptr{Void}, iter::Int32, dtrain::Ptr{Void})
+function XGBoosterUpdateOneIter(handle::Ptr{Cvoid}, iter::Int32, dtrain::Ptr{Cvoid})
     @xgboost(:XGBoosterUpdateOneIter,
              handle => Ptr{Void},
              iter => Cint,
              dtrain => Ptr{Void})
 end
 
-function XGBoosterBoostOneIter(handle::Ptr{Void}, dtrain::Ptr{Void}, grad::Vector{Float32},
+function XGBoosterBoostOneIter(handle::Ptr{Cvoid}, dtrain::Ptr{Cvoid}, grad::Vector{Float32},
                                hess::Vector{Float32}, len::UInt64)
     @xgboost(:XGBoosterBoostOneIter,
              handle => Ptr{Void},
@@ -193,7 +193,7 @@ function XGBoosterBoostOneIter(handle::Ptr{Void}, dtrain::Ptr{Void}, grad::Vecto
              len => Bst_ulong)
 end
 
-function XGBoosterEvalOneIter(handle::Ptr{Void}, iter::Int32, dmats::Vector{Ptr{Void}},
+function XGBoosterEvalOneIter(handle::Ptr{Cvoid}, iter::Int32, dmats::Vector{Ptr{Cvoid}},
                               evnames::Vector{String}, len::UInt64)
     out_result = Ref{Cstring}()
     @xgboost(:XGBoosterEvalOneIter,
@@ -206,7 +206,7 @@ function XGBoosterEvalOneIter(handle::Ptr{Void}, iter::Int32, dmats::Vector{Ptr{
     return unsafe_string(out_result[])
 end
 
-function XGBoosterPredict(handle::Ptr{Void}, dmat::Ptr{Void}, option_mask::Int32,
+function XGBoosterPredict(handle::Ptr{Cvoid}, dmat::Ptr{Cvoid}, option_mask::Int32,
                           ntree_limit::UInt32, out_len::Vector{UInt64})
     out_result = Ref{Ptr{Float32}}()
     @xgboost(:XGBoosterPredict,
@@ -219,19 +219,19 @@ function XGBoosterPredict(handle::Ptr{Void}, dmat::Ptr{Void}, option_mask::Int32
     return out_result[]
 end
 
-function XGBoosterLoadModel(handle::Ptr{Void}, fname::String)
+function XGBoosterLoadModel(handle::Ptr{Cvoid}, fname::String)
     @xgboost(:XGBoosterLoadModel,
              handle => Ptr{Void},
              fname => Cstring)
 end
 
-function XGBoosterSaveModel(handle::Ptr{Void}, fname::String)
+function XGBoosterSaveModel(handle::Ptr{Cvoid}, fname::String)
     @xgboost(:XGBoosterSaveModel,
              handle => Ptr{Void},
              fname => Cstring)
 end
 
-function XGBoosterDumpModel(handle::Ptr{Void}, fmap::String, with_stats::Int64)
+function XGBoosterDumpModel(handle::Ptr{Cvoid}, fmap::String, with_stats::Int64)
     out_dump_array = Ref{Ptr{Cstring}}()
     out_len = Ref{Bst_ulong}(0)
     @xgboost(:XGBoosterDumpModel,

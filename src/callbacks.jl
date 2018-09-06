@@ -2,7 +2,7 @@ const maximize_metrics = ("auc", "map", "ndcg")
 const maximize_at_n_metrics = ("auc@", "map@", "ndcg@")
 
 
-type CallbackEnv
+mutable struct CallbackEnv
     model::Booster
     cvfolds::Vector{CVPack}
     iteration::Int
@@ -13,7 +13,7 @@ type CallbackEnv
 end
 
 
-type EarlyStopException <: Exception
+mutable struct EarlyStopException <: Exception
     best_iteration::Int
 end
 
@@ -67,9 +67,9 @@ function print_evaluation(results::Dict{String,Dict{String,Matrix{Float64}}}, it
 end
 
 
-@compat function cb_early_stop(early_stopping_rounds::Integer, maximize::Bool,
-                               verbose_eval::Union{Bool,Int}, params::Dict{String,<:Any},
-                               evals::Vector{Tuple{DMatrix,String}}, feval::Union{Function,Void})
+function cb_early_stop(early_stopping_rounds::Integer, maximize::Bool,
+                       verbose_eval::Union{Bool,Int}, params::Dict{String,<:Any},
+                       evals::Vector{Tuple{DMatrix,String}}, feval::Union{Function,Nothing})
     cb_timing = "after"
     cb_early_stopping_metric = Ref{String}("")
     cb_best_iteration = Ref{Int}(0)

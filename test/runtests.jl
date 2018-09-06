@@ -1,5 +1,5 @@
 using XGBoost
-using Base.Test
+using Test
 
 include(Pkg.dir("XGBoost") * "/test/utils.jl")
 

@@ -1,7 +1,7 @@
-@compat function xgboost(data, nrounds::Integer;
-                         label = nothing, param::Dict{String,<:Any} = Dict{String,String}(),
-                         watchlist = [], metrics = [], obj = nothing, feval = nothing, group = [],
-                         kwargs...)
+function xgboost(data, nrounds::Integer;
+                 label = nothing, param::Dict{String,<:Any} = Dict{String,String}(),
+                 watchlist = [], metrics = [], obj = nothing, feval = nothing, group = [],
+                 kwargs...)
     if isa(data, DMatrix)
         dtrain = data
     else
@@ -48,7 +48,7 @@ end
 
 function mknfold(dall::DMatrix, nfold::Integer, param, seed::Integer, evals=[]; fpreproc = nothing,
                  kwargs = [])
-    srand(seed)
+    Random.seed!(seed)
     randidx = randperm(XGDMatrixNumRow(dall.handle))
     kstep = size(randidx)[1] / nfold
     idset = [randidx[round(Int64, (i-1) * kstep) + 1 : min(size(randidx)[1],round(Int64, i * kstep))] for i in 1:nfold]
@@ -135,7 +135,7 @@ function nfold_cv(data, num_boost_round::Integer = 10, nfold::Integer = 3; label
 end
 
 
-immutable FeatureImportance
+struct FeatureImportance
     fname::String
     gain::Float64
     cover::Float64
@@ -177,7 +177,7 @@ function importance(bst::Booster; fmap::String = "")
     for i in 1:length(data)
         for line in split(unsafe_string(data[i]), '\n')
             m = match(lineMatch, line)
-            if !isa(m, Void)
+            if !isa(m, Nothing)
                 fname = replace(m.captures[1], nameStrip, "")
 
                 gain = parse(Float64, m.captures[4])

@@ -28,14 +28,14 @@ Return a Booster trained with the given parameters.
     should have a field `cb_timing` that indicates when the callback should run. Can be "before",
     or "after" the training iteration.
 """
-@compat function train(params::Dict{String,<:Any}, dtrain::DMatrix;
-                       num_boost_round::Int = 10,
-                       evals::Vector{Tuple{DMatrix,String}} = Vector{Tuple{DMatrix,String}}(),
-                       obj::Union{Function,Void} = nothing, feval::Union{Function,Void} = nothing,
-                       maximize::Bool = false, early_stopping_rounds::Union{Int,Void} = nothing,
-                       verbose_eval::Union{Bool,Int} = true,
-                       xgb_model::Union{Booster,String,Void} = nothing,
-                       callbacks::Union{Vector{Function},Void} = nothing)
+function train(params::Dict{String,<:Any}, dtrain::DMatrix;
+               num_boost_round::Int = 10,
+               evals::Vector{Tuple{DMatrix,String}} = Vector{Tuple{DMatrix,String}}(),
+               obj::Union{Function,Nothing} = nothing, feval::Union{Function,Nothing} = nothing,
+               maximize::Bool = false, early_stopping_rounds::Union{Int,Nothing} = nothing,
+               verbose_eval::Union{Bool,Int} = true,
+               xgb_model::Union{Booster,String,Nothing} = nothing,
+               callbacks::Union{Vector{Function},Nothing} = nothing)
 
     callbacks_vec = isa(callbacks, Vector{Function}) ? callbacks : Vector{Function}()
 
@@ -45,14 +45,14 @@ Return a Booster trained with the given parameters.
         push!(callbacks_vec, cb_print_evaluation(verbose_eval))
     end
 
-    if !isa(early_stopping_rounds, Void)
+    if !isa(early_stopping_rounds, Nothing)
         push!(callbacks_vec, cb_early_stop(early_stopping_rounds, maximize, verbose_eval, params,
                                            evals, feval))
     end
 
     # Initialize the Booster with the appropriate caches.
-    if isa(xgb_model, Void)
-        cache = unshift!([eval[1] for eval in evals], dtrain)
+    if isa(xgb_model, Nothing)
+        cache = pushfirst!([eval[1] for eval in evals], dtrain)
         bst = Booster(params = params, cache = cache)
         num_boost = 0
     else
@@ -61,7 +61,7 @@ Return a Booster trained with the given parameters.
         else
             _xgb_model = save_raw(xgb_model)
         end
-        cache = unshift!([eval[1] for eval in evals], dtrain)
+        cache = pushfirst!([eval[1] for eval in evals], dtrain)
         bst = Booster(params = params, cache = cache;
                       model_file = _xgb_model)
         num_boost = length(get_dump(bst))
@@ -139,7 +139,7 @@ end
 # Insert the entries in the evalstring into the results dictionary.
 function insert_evals!(results::Dict{String,Dict{String,Matrix{Float64}}}, evalstring::String,
                        row::Int, col::Int, num_rows::Int, num_cols::Int)
-    split_eval_set = split(evalstring, ['\t', '-', ':'], keep = false)
+    split_eval_set = split(evalstring, ['\t', '-', ':'], keepempty = false)
     num_evals = div(length(split_eval_set) + 1, 3)
 
     for eval_idx in 1:num_evals
